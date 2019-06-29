@@ -1,0 +1,343 @@
+<html>
+    <head>
+        <script src="https://cdn.babylonjs.com/babylon.js" type="text/javascript"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js" type="text/javascript"></script>
+        <style>
+            body{
+                margin: 0px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <div id="testing"></div>
+        <div id="near-stars"></div>
+        <input type="text" name="fov"/>
+        <script>
+            var fov = document.getElementsByTagName("input")[0];
+            var m = document.getElementById("testing");
+            var stars = document.getElementById("near-stars");
+            var canvas = document.getElementById('canvas');
+            var body = document.getElementsByTagName('body')[0];
+            body.style.width = '100%';
+            body.style.height = '80%';
+            canvas.width = body.offsetWidth;
+            canvas.height = body.offsetHeight;
+            var z = 0;
+            var engine = new BABYLON.Engine(canvas,true,{preserveDrawingBuffer: true,stencil: true})
+            var thrust = [0,0,0];
+            
+            fov.onchange = function(el){
+                test.cameras[0].fov = el.target.value;
+            }
+            
+            var test = function(){
+                this.scene = new BABYLON.Scene(engine);
+                this.scene.clearColor = new BABYLON.Color3(0,0,0);
+                this.start = new BABYLON.Vector3(50000,50000,50000);
+                this.camera = new BABYLON.FreeCamera("camera",this.start,this.scene);
+                
+                this.groundMaterial = new BABYLON.StandardMaterial("ground",this.scene);
+                this.groundMaterial.diffuseTexture = new BABYLON.Texture("images/hmap.jpg",this.scene);
+                this.groundMaterial.emissiveColor = new BABYLON.Color3(255,255,255);
+                
+                this.sphere = new BABYLON.MeshBuilder.CreateSphere("planet",{position: this.start,diameter: 100,segments: 36},this.scene);
+                this.sphere.material = this.groundMaterial;
+                
+                this.ground = new BABYLON.Mesh.CreateGroundFromHeightMap("Planet","images/hmap.jpg",10,10,750,0,0.3,this.scene);
+                this.ground.position.x = this.start.x;
+                this.ground.position.y = this.start.y-10;
+                this.ground.position.z = this.start.z;
+            
+                this.ground.material = this.groundMaterial;
+                
+                this.light = new BABYLON.HemisphericLight("light",new BABYLON.Vector3(5,5,-10),this.scene);
+                this.light.intensity = 0.7;
+                
+                this.gui = new BABYLON.MeshBuilder.CreatePlane("plane",{width: 10,height: 10},this.scene);
+                
+                this.currentSelection = null;
+                
+                this.camera.setTarget(new BABYLON.Vector3(0,0,z));
+                this.camera.attachControl(canvas,true);
+                this.camera.maxZ = 10000000;
+                this.camera.inertia = 0.03;
+                
+                this.totalStars = 10000;
+                
+                this.points = [];
+                
+                this.stars = [];
+                this.starMesh = [];
+                var time = 1000;
+                
+                for(var i = 0;i < this.totalStars; ++i){
+                    this.stars.push({
+                        name: "star"+i,
+                        size: (Math.random()*50)+10,
+                        x:(Math.random()*200000),
+                        y:(Math.random()*200000),
+                        z:(Math.random()*200000)
+                    });
+                }
+                
+                this.stats = {
+                    name: "null",
+                    size: 0,
+                    x: 0,
+                    y: 0,
+                    z: 0
+                }
+                
+                var stat = this.stats;
+                stat.name = "";
+                stat.size = 0;
+                stat.x = 0;
+                stat.y = 0;
+                stat.z = 0;
+                this.stars.push();
+                
+                var white = new BABYLON.Color3(1,1,1);
+                var red = new BABYLON.Color3(1,0,0);
+                
+                this.centerMat = new BABYLON.StandardMaterial("galaxyMiddle",this.scene);
+                this.centerMat.emissiveColor = white;
+                this.centerMat.ambientColor = white;
+                
+                this.centerMat1 = new BABYLON.StandardMaterial("galaxyT",this.scene);
+                this.centerMat1.emissiveColor = red;
+                this.centerMat1.ambientColor = red;
+                
+                this.textMaterial = new BABYLON.DynamicTexture("DynamicTexture",{width: 10,height: 10},this.scene);
+                this.textMaterial.drawText("testing",10,10);
+                this.guiMaterial = new BABYLON.StandardMaterial("StandardMaterial");
+                this.guiMaterial.emissiveColor = white;
+                this.guiMaterial.ambientColor = white;
+                this.guiMaterial.diffuseTexture = this.textMaterial;
+                this.gui.material = this.guiMaterial;
+                
+                this.galaxy = new BABYLON.StandardMaterial("galaxyMaterial",this.scene);
+                this.galaxy.diffuseTexture = new BABYLON.Texture("galaxy.png",this.scene);
+                this.galaxy.emissiveColor = new BABYLON.Color3(1,1,1);
+                
+                this.highlight = new BABYLON.GlowLayer("h1",this.scene);
+                this.highlight.outerGlow = true;
+                this.highlight.intensity = 10;
+                this.highlight.blurKernelSize = 30;
+                //this.mb.motionStrength = 0.3;
+                
+                this.finalPosition = {};
+                
+                this.advancedTexture = new BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+                
+                this.starLabel = new BABYLON.GUI.TextBlock();
+                this.starLabel.color = "white";
+                this.starLabel.alpha = 0.8;
+                this.starLabel.fontSize = 10;
+                this.advancedTexture.addControl(this.starLabel);
+                
+                for(var i = 0; i < this.totalStars; ++i){
+                    var radius = this.stars[i].size;
+                    var segments = 1;
+                    var sphere = BABYLON.MeshBuilder.CreateSphere('star'+i,{diameter:radius,segments:segments},this.scene);
+                    sphere.position.x = this.stars[i].x;
+                    sphere.position.y = this.stars[i].y;
+                    sphere.position.z = this.stars[i].z;
+                    sphere.material = ((Math.random()*10) % 2 == 2)?this.centerMat1:this.centerMat;
+                    this.starMesh.push(sphere);
+                }
+                
+                this.curfov = 1;
+                var self = this;
+                
+                var setupText = [];
+                var lines = [];
+                var speed = {x:0,y:0,z:0};
+                setInterval(function(){
+                    var camerainfo = document.getElementById("testing");
+                    //camerainfo.innerHTML = "CameraInfo rotation: "+self.camera.rotation.x+" "+self.camera.rotation.y+"<br/>";
+                    if(self.currentSelection != null){
+                        /*if(typeof self.currentSelection.position == 'object'){
+                            camerainfo.innerHTML += "Object: "+self.currentSelection.position.x+" "+self.currentSelection.position.y+" "+self.currentSelection.position.z+"<br/>";
+                            camerainfo.innerHTML += "Camera: "+self.camera.position.x+" "+self.camera.position.y+" "+self.camera.position.z;
+                        }*/
+                    }
+                    var starString = "";
+                    
+                    if(typeof self.finalPosition.x != 'undefined'){
+                        //accelerate = false;
+                        speed = {
+                            x: Math.abs((self.finalPosition.x)-self.camera.position.x)/20,
+                            y: Math.abs((self.finalPosition.y)-self.camera.position.y)/20,
+                            z: Math.abs((self.finalPosition.z)-self.camera.position.z)/20,
+                        };
+                        
+                        self.camera.position.x = (self.finalPosition.x > self.camera.position.x)?self.camera.position.x+speed.x:self.camera.position.x-speed.x;
+                        self.camera.position.y = (self.finalPosition.y > self.camera.position.y)?self.camera.position.y+speed.y:self.camera.position.y-speed.y;
+                        self.camera.position.z = (self.finalPosition.z > self.camera.position.z)?self.camera.position.z+speed.z:self.camera.position.z-speed.z;
+                        
+                        if(speed.x < 10){
+                            accelerate = false;
+                        }
+                        
+                        if(speed.x < 0.01){
+                            
+                            self.finalPosition = {};
+                        }
+                    }
+                    
+                    for(a in self.stars){
+                        if(self.camera.position.x+10000 > self.stars[a].x && self.camera.position.x-10000 < self.stars[a].x
+                        && self.camera.position.y+10000 > self.stars[a].y && self.camera.position.y-10000 < self.stars[a].y 
+                        && self.camera.position.z+10000 > self.stars[a].z && self.camera.position.z-10000 < self.stars[a].z){
+                            if(typeof setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z] == "undefined"){
+                                var starLabel = new BABYLON.GUI.TextBlock();
+                                starLabel.color = "orange";
+                                starLabel.alpha = 0.8;
+                                starLabel.fontSize = 10;
+                                self.advancedTexture.addControl(starLabel);
+                                
+                                self.starMesh[a].dispose();
+                                
+                                var sphere = BABYLON.MeshBuilder.CreateSphere('star'+a,{diameter:self.stars[a].size,segments:36},self.scene);
+                                sphere.position.x = self.stars[a].x;
+                                sphere.position.y = self.stars[a].y;
+                                sphere.position.z = self.stars[a].z;
+                                sphere.material = self.centerMat;
+                                
+                                self.starMesh[a] = sphere;
+                                self.highlight.addIncludedOnlyMesh(sphere);
+                                
+                                starLabel.text = "Star Found";
+                                starLabel.text += Math.abs(self.stars[a].x-self.camera.position.x);
+                                starLabel.linkWithMesh(self.starMesh[a]);
+                                starLabel.linkOffsetY = -10;
+                                setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z] = starLabel;
+                            }else{
+                                if(parseInt(Math.abs(self.stars[a].x-self.camera.position.x)) < 1000){
+                                    if(setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].color != "green"){
+                                        setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].color = "green";
+                                        setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].linkOffsetX = 100;
+                                    }
+                                }else{
+                                    if(typeof lines[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z] != 'undefined'){
+                                        self.advancedTexture.removeControl(lines[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z]);
+                                    }
+                                    setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].color = "white";
+                                    setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].linkOffsetX = 0;
+                                }
+                                setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z].text = self.stars[a].size+"\r\n"+Math.abs(self.stars[a].y-self.camera.position.y); 
+                            }
+                            //starString += "star: "+Math.floor(self.stars[a].x)+" "+Math.floor(self.stars[a].y)+" "+Math.floor(self.stars[a].z)+" <br/>";
+                        }else{
+                            if(typeof setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z] != "undefined"){
+                                self.advancedTexture.removeControl(setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z]);
+                                delete setupText[self.stars[a].x+" "+self.stars[a].y+" "+self.stars[a].z];
+                            }
+                        }
+                    }
+                    //stars.innerHTML = starString;
+                },100);
+                
+                var travel = BABYLON.Mesh.CreateLines("travel", this.points, this.scene, true);
+                var positionData = travel.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+                window.addEventListener("mousemove",function(el){
+                    var pick = self.scene.pick(el.offsetX,el.offsetY);
+                    if(pick.hit){
+                        self.starLabel.text = pick.pickedMesh.position.z-self.camera.position.z+" ";
+                        self.starLabel.linkWithMesh(pick.pickedMesh);
+                        self.starLabel.linkOffsetY = -10;
+                    }
+                })
+                window.addEventListener("click",function(el){
+                    var pick = self.scene.pick(el.offsetX,el.offsetY);
+                    if(pick.hit){
+                        //used for cleaning up gui on screen
+                        var mesh = pick.pickedMesh;
+                        if(typeof setupText[mesh.position.x+" "+mesh.position.y+" "+mesh.position.z] != 'undefined'){
+                            self.advancedTexture.removeControl(setupText[mesh.position.x+" "+mesh.position.y+" "+mesh.position.z]);
+                        }
+                        var mesh = pick.pickedMesh;
+                        if(self.currentSelection != null){
+                            var id = self.currentSelection.name.replace("star","");
+                            var sphere = new BABYLON.MeshBuilder.CreateSphere("star"+id,{diameter:self.stars[id].size,segments:1},self.scene);
+                            sphere.x = self.currentSelection.position.x;
+                            sphere.y = self.currentSelection.position.y;
+                            sphere.z = self.currentSelection.position.z;
+                        }
+                        var id = mesh.name.replace("star","");
+                        var sphere = new BABYLON.MeshBuilder.CreateSphere(mesh.name,{diameter:self.stars[id].size,segments:36},self.scene);
+                        sphere.position.x = mesh.position.x;
+                        sphere.position.y = mesh.position.y;
+                        sphere.position.z = mesh.position.z;
+                        sphere.material = self.centerMat;
+                        mesh.dispose();
+                        mesh = sphere;
+                        self.currentSelection = sphere;
+                        
+                        if(mesh.name != "plane"){
+                            accelerate = true;
+                            self.finalPosition = {
+                                z: (self.camera.position.z > mesh.position.z)?mesh.position.z+200:mesh.position.z-200,
+                                x: (self.camera.position.x > mesh.position.x)?mesh.position.x+200:mesh.position.x-200,
+                                y: (self.camera.position.y > mesh.position.y)?mesh.position.y+200:mesh.position.y-200,
+                                rotation: {x: -0.026343939148262392, y: -0.013769774779277658}
+                            };
+                            self.highlight.addIncludedOnlyMesh(mesh);
+                            self.points.push(new BABYLON.Vector3(mesh.position.x,mesh.position.y,mesh.position.z));
+                            travel = BABYLON.Mesh.CreateLines("travel",self.points,self.scene,true);
+                        }
+                    }
+                });
+                
+                this.getScene = function(){
+                    return this.scene;
+                }
+            }
+            
+            var t = new test();
+            var test = t.getScene();
+            engine.runRenderLoop(function(){
+                if(test){
+                    test.render();
+                    /*if(accelerate){
+                        test.cameras[0].fov = curfov;
+                        if(curfov < 1.3){
+                            test.cameras[0].inertia += 0.003;
+                            curfov += 0.01;
+                        }
+                    }else{
+                        test.cameras[0].fov = curfov;
+                        if(curfov > 1){
+                            test.cameras[0].inertia -= 0.003;
+                            curfov -= 0.01;
+                        }
+                    }*/
+                }
+            });
+            
+            var accelerate = false;
+            var curfov = 1;
+            /* keys 
+                up - 8 - 104
+                down - 2 - 98
+                left - 4 - 100
+                right - 6 - 102 */
+            window.onkeydown = function(el){
+                switch(el.keyCode){
+                    case 38:
+                        accelerate = true;
+                        break;
+                }
+            }
+            
+            window.onkeyup = function(el){
+                switch(el.keyCode){
+                    case 38:
+                        accelerate = false;
+                        break;
+                }
+            }
+        </script>
+    </body>
+</html>

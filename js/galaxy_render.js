@@ -34,6 +34,8 @@ var galaxy_render = function(star_size,orbits,offset){
         
         this.circles = [];
         
+        //setup orbits of objects around star
+        console.log("create galaxy_render_objects");
         for(var i = 0; i < this.orbits.length; i++){
             var position = {'x':parseFloat(this.orbits[i].position.x),'y':parseFloat(this.orbits[i].position.y)};
             if(this.circles[i-1] != undefined){
@@ -64,7 +66,7 @@ var galaxy_render = function(star_size,orbits,offset){
         }
         
         var galaxy_self = this;
-        
+        //render a galaxy
         this.render = function(){
             if(galaxy_self.star_size*galaxy_self.zoom < 1){
                 this.depth_higher = 'true';
@@ -79,8 +81,17 @@ var galaxy_render = function(star_size,orbits,offset){
             			grd.addColorStop(1,"rgba("+galaxy_self.star_color[0]+","+galaxy_self.star_color[1]+","+galaxy_self.star_color[2]+",0)");
             	
             	ctx.beginPath();
-                ctx.arc(galaxy_self.offset.x+(canvas.offsetWidth/2),galaxy_self.offset.y+(canvas.offsetHeight/2),galaxy_self.star_size*galaxy_self.zoom,0,galaxy_self.pi_circle);
-                ctx.fillStyle = grd;
+            	//used to keep the galaxy center viewable
+            	var radius = galaxy_self.star_size*galaxy_self.zoom;
+            	if(radius > 100){
+                    ctx.fillStyle = grd;
+                }else{
+                    ctx.fillStyle = "#fff";
+                    radius = 10;
+                }
+                //galaxy center
+                ctx.arc(galaxy_self.offset.x+(canvas.offsetWidth/2),galaxy_self.offset.y+(canvas.offsetHeight/2),radius,0,galaxy_self.pi_circle);
+                
                 ctx.fill();
             	
             	if(galaxy_self.mouse_position != undefined && 
@@ -107,6 +118,7 @@ var galaxy_render = function(star_size,orbits,offset){
                     ctx.beginPath();
                     
                     var collide = 'false';
+                    console.log("testing");
                     if(galaxy_self.mouse_position != undefined && 
                     	galaxy_self.mouse_position.x <= (galaxy_self.offset.x-(position.x*galaxy_self.zoom)+(position.size+10))+(canvas.offsetWidth/2) &&
                     	galaxy_self.mouse_position.x >= (galaxy_self.offset.x-(position.x*galaxy_self.zoom)-(position.size+10))+(canvas.offsetWidth/2) &&
@@ -123,10 +135,16 @@ var galaxy_render = function(star_size,orbits,offset){
                     				galaxy_self.selected_star = a;
                     			}
                     		} else {
+                    		    var radius = position.size+1;
                     			ctx.beginPath();
-                    			ctx.fillStyle = grd;
+                    			if(radius > 10){
+                    			    ctx.fillStyle = grd;
+                    			}else{
+                    			    ctx.fillStyle = "#fff";
+                    			    radius = 3;
+                    			}
                     			ctx.arc((galaxy_self.offset.x-(position.x*galaxy_self.zoom))+(canvas.offsetWidth/2),(galaxy_self.offset.y-(position.y*galaxy_self.zoom))+(canvas.offsetHeight/2),
-                    				position.size+10,
+                    				radius,
                     				0,galaxy_self.pi_circle);
                     			ctx.fill();
                     		}
@@ -181,10 +199,16 @@ var galaxy_render = function(star_size,orbits,offset){
             			grd.addColorStop('.4','rgba(255,255,255,1)');
             			grd.addColorStop(1,"rgba("+galaxy_self.star_color[0]+","+galaxy_self.star_color[1]+","+galaxy_self.star_color[2]+",0)");
         				
+        				var radius = position.size*galaxy_self.zoom;
                     	ctx.beginPath();
-                        ctx.fillStyle = grd;
+                    	if(radius > 3){
+                    	    ctx.fillStyle = grd;
+                    	}else{
+                            ctx.fillStyle = '#fff';
+                            radius = position.size;
+                    	}
                         ctx.arc((galaxy_self.offset.x-(position.x*galaxy_self.zoom))+(canvas.offsetWidth/2),(galaxy_self.offset.y-(position.y*galaxy_self.zoom))+(canvas.offsetHeight/2),
-                        		 position.size*galaxy_self.zoom,
+                        		 radius,
                         		 0,galaxy_self.pi_circle);
                         ctx.fill();
                 	}
@@ -202,6 +226,7 @@ var galaxy_render = function(star_size,orbits,offset){
                 ctx.fillText('Star: '+star_size,10,86);
                 ctx.fill();
                 
+                //show selected objects
                 for(a in galaxy_self.selected_objects){
                     if(galaxy_self.selected_objects[parseInt(a)+1] != undefined){
                         var position = galaxy_self.circles[galaxy_self.selected_objects[a]];

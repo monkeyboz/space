@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <script>
+            window.onload = function(){
+                var c = document.getElementById("canvas");
+                c.width = 1000;
+                c.height = 1000;
+                
+                var d = c.getContext('2d');
+                var origin = [0,0,30,50];
+                d.fillStyle = "black";
+                
+                var x = y = 0;
+                
+                function layout(x1,y1,x2,y2){
+                    var line = [x1,y1,x2,y2];
+                    d.lineWidth = 5;
+                    d.beginPath();
+                    d.moveTo(line[0],line[1]);
+                    d.lineTo(line[2],line[3]);
+                    d.stroke();
+                    
+                    var distance = [(line[2]-x1)/10,(line[3]-y1)/10];
+                    if(line[1]-line[3] < -100){
+                        for(var i = 0; i <= 10; ++i){
+                            var y = ((distance[1])*i)+y1;
+                            d.beginPath();
+                            d.moveTo(line[0],y);
+                            d.lineTo(line[2],y);
+                            d.stroke();
+                            
+                            var x = ((distance[0])*i)+x1;
+                            d.beginPath();
+                            d.moveTo(x,line[1]);
+                            d.lineTo(x,line[3]);
+                            d.stroke();
+                        }
+                    }
+                    return [line[2],line[3]];
+                }
+                var dimensions = [];
+                var xy = [20,20];
+                for(var i = 0; i < 30; ++i){
+                    var dimension = [xy[0],xy[1],Math.random()*300+300,Math.random()*300+300];
+                    if(typeof dimensions[i-1] != 'undefined'){
+                    }else{
+                        dimension = [xy[0],xy[1],Math.random()*300+300,Math.random()*300+300];
+                    }
+                    dimensions.push(dimensions);
+                    layout(dimension[0],dimension[1],dimension[2]+20,dimension[3]+20);
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+    </body>
+</html>

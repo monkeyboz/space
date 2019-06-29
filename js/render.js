@@ -36,7 +36,7 @@ var render = function(type){
 	}
 	
 	this.create_galaxies = function(){
-		for(var i = 0; i < 100; i++){
+		for(var i = 0; i < 1000; i++){
 			var x = Math.random()*1000;
 			var y = Math.random()*1000;
 			var size = Math.random()*100;
@@ -78,7 +78,6 @@ var render = function(type){
 				&& object.position.y+(object.size/self.zoom) >= mouse_position.y && object.position.y-(object.size/self.zoom) <= mouse_position.y;
 		},
 		animate : function(){
-		    console.log('testing');
 		}
 	}
 	
@@ -181,7 +180,6 @@ var render = function(type){
 				this.menu_list[a].y >= mouse_position.y &&
 				this.menu_list[a].y+this.menu_list[a].height <= mouse_position.y
 			){
-				console.log('testing');
 			}
 		}
 	}
@@ -190,6 +188,14 @@ var render = function(type){
 		var calc_x = parseFloat(this.origin.x-this.offset.x-mouse_position.x)/this.zoom;
 		var calc_y = parseFloat(this.origin.y-this.offset.y-mouse_position.y)/this.zoom;
 		return {'x':calc_x,'y':calc_y};
+	}
+	
+	this.placeText = function(x,y,text,color){
+		color = (typeof color != 'undefined')?color:"#fff";
+		ctx.beginPath();
+		ctx.fillStyle = color;
+		ctx.fillText(text,x,y);
+		ctx.fill();
 	}
 	
 	// Render Background
@@ -214,7 +220,7 @@ var render = function(type){
 		
 		ctx.beginPath();
 		ctx.fillStyle = 'white';
-		ctx.fillText('Calculated: '+calc_x+':'+calc_y, 10, 90);
+		ctx.fillText('Calculated1: '+calc_x+':'+calc_y, 10, 90);
 		ctx.fill();
 		
 		ctx.beginPath();
@@ -263,13 +269,18 @@ var render = function(type){
 		switch(this.type){
 			case 'galaxy':
 				this.render_stars(mouse_position,this.current_selected_depth_item_id[0]);
+				this.placeText(10,140,"Total Stars: "+this.space.galaxies[this.current_selected_depth_item_id[0]].getStars().length);
+				this.placeText(10,155,"Selecte Galaxy: "+this.current_selected_depth_item_id[0]);
 				break;
 			case 'star':
 				this.render_solar_system(mouse_position,this.current_selected_depth_item_id[0],this.current_selected_depth_item_id[1]);
+				this.placeText(10,140,"Total Planets: "+this.space.galaxies[this.current_selected_depth_item_id[0]].stars[parseInt(this.current_selected_depth_item_id[1])].planets.length);
+				this.placeText(10,155,"Selected Star: "+this.current_selected_depth_item_id[1],10,155);
 				break;
 			case 'galaxies':
 			default:
 				this.render_galaxies(galaxies,mouse_position,calc_x,calc_y);
+				this.placeText(10,140,"Total Galaxies: "+galaxies.length);
 				break;
 		}
 		
@@ -352,7 +363,6 @@ var render = function(type){
            mouse_position.x >= this.offset.x-(canvas.offsetWidth/2)-(point.size) &&
            mouse_position.y <= this.offset.y+(canvas.offsetHeight/2)+(point.size) &&
            mouse_position.y >= this.offset.y-(canvas.offsetHeight/2)-(point.size)){
-        	    console.log('testing');
         	}
 		
 		if( ((origin_x+point.size/2)*this.zoom) >= ((mouse_position.x)*this.zoom) &&

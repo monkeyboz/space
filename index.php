@@ -51,6 +51,20 @@
 			
 			var render = new render('space');
 			render.create_galaxies();
+			var total_objects = 0;
+			var total_planets = 0;
+			for(var i in render.space.galaxies){
+				total_objects += render.space.galaxies[i].stars.length;
+				for(var n in render.space.galaxies[i].stars){
+					console.log(render.space.galaxies[i].stars[n].planets.length);
+					total_planets += render.space.galaxies[i].stars[n].planets.length;
+				}
+			}
+			console.log("Star Planets: "+total_planets);
+			console.log("Galaxy Stars: "+total_objects);
+			total_objects += render.space.galaxies.length;
+			console.log(total_objects+total_planets);
+			console.log(render.space);
 		</script>
 	</body>
 </html>

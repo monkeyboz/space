@@ -1,0 +1,136 @@
+<html>
+    <head>
+        <script src="https://cdn.babylonjs.com/babylon.js" type="text/javascript"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js" type="text/javascript"></script>
+        <script src="babylon/dynamicterrain.min.js" type="text/javascript"></script>
+        <script>
+            window.onload = function(){
+                var scene = function(){
+                    this.canvas = document.getElementById("canvas");
+                    this.canvas.width = 700;
+                    this.canvas.height = 700;
+                    
+                    this.engine = new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
+                    this.scene = new BABYLON.Scene(this.engine);
+                    
+                    this.camera = new BABYLON.FlyCamera("camera",new BABYLON.Vector3(0,600,0),this.scene);
+                    this.camera.attachControl(this.canvas,true);
+                    this.camera.inertia = 0.9;
+                    
+                    this.light = new BABYLON.HemisphericLight("light",new BABYLON.Vector3(5,5,-10),this.scene);
+                    this.light.intensity = 0.7;
+                    
+                    this.mapSubX = 100;
+                    this.mapSubZ = 100;
+                    this.mapData = new Float32Array(this.mapSubX * this.mapSubZ * 3); // 3 float values per point : x, y and z
+                    
+                    this.scene.clearColor = BABYLON.Color3.White();
+                    
+                    this.scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
+                    this.scene.fogStart = 200;
+                    this.scene.fogEnd = 6000;
+                    this.scene.fogColor = new BABYLON.Color3(1,1,1,0);
+                    
+                    this.mapUrl = "images/bmp.png";
+                    
+                    this.createMapData = function(){
+                        var image = new Image();
+                        image.src = this.mapUrl;
+                        var check = this;
+                        image.onload = function(){
+                            var getData = document.createElement('canvas');
+                            getData.width = this.height/6;
+                            getData.height = this.width/6;
+                            var cgd = getData.getContext('2d');
+                            cgd.drawImage(this,0,0);
+                            /*for(var i = 0; i < check.mapSubZ; ++i){
+                                for(var j = 0; j < check.mapSubX; ++j){
+                                    var color = cgd.getImageData(i,j,1,1).data;
+                                    var p = [(i - check.mapSubX * 0.5) * check.mapSubX,
+                                        color[0],
+                                        (j - check.mapSubX * 0.5) * check.mapSubX];
+                                    check.mapData[3 * (i * mapSubX + j)] = p[0];
+                                    check.mapData[3 * (i * mapSubX + j)+1] = p[1];
+                                    check.mapData[3 * (i * mapSubX + j)+2] = p[2];
+                                }
+                            }*/
+                            var mapUVs = new Float32Array(getData.width * getData.height * 3);
+                            var mapData = new Float32Array(getData.width * getData.height * 3);  // x3 because 3 values per point : x, y, z
+                            for (var l = 0; l < getData.height; l++) {                 // loop on height points
+                                for (var w = 0; w < getData.width; w++) {             // loop on width points
+                                    var color = cgd.getImageData(l,w,1,1).data;
+                                    var x = (w - getData.width * 0.5) * 5.0;          // distance inter-points = 5 on the width
+                                    var z = (l - getData.width * 0.5) * 2.0;          // distance inter-points = 2 on the width
+                                    var y = Math.abs(color[0])/4;               // altitude
+                        
+                                    mapData[3 * (l * getData.width + w)] = x;
+                                    mapData[3 * (l * getData.width + w) + 1] = y;
+                                    mapData[3 * (l * getData.width + w) + 2] = z;
+                                    
+                                    mapUVs[2 * (l * getData.width + w)] = w / getData.height;        // u
+                                    mapUVs[2 * (l * getData.width + w) + 1] = l / getData.width;    // v
+                                }
+                            }
+                            var terrainSub = 600;               // 100 terrain subdivisions
+                            var params = {
+                                mapData: mapData,               // data map declaration : what data to use ?
+                                mapSubX: getData.width,               // how are these data stored by rows and columns
+                                mapSubZ: getData.height,
+                                terrainSub: terrainSub          // how many terrain subdivisions wanted
+                            }
+                            var terrain = new BABYLON.DynamicTerrain("t", params, check.scene);
+                            terrain.createUVMap();
+                            var terrainMaterial = new BABYLON.StandardMaterial("tm", check.scene);
+                            //terrainMaterial.diffuseTexture = new BABYLON.Texture(check.mapUrl,check.scene);
+                            //terrainMaterial.diffuseColor = BABYLON.Color3.Green();
+                            terrainMaterial.specularColor = new BABYLON.Color3(0,0,0);
+                            terrainMaterial.ambientColor = new BABYLON.Color3(255,255,255,0);
+                            //terrainMaterial.alpha = 0.8;
+                            terrainMaterial.wireframe = true;
+                            terrainMaterial.uScale = 1;
+                            terrainMaterial.vScale = terrainMaterial.uScale;
+                            terrain.mesh.material = terrainMaterial;
+                            terrain.LODLimits = [5,5,5,5,5,10,10,10,10,10,10,10,50,100];
+                            terrain.update(true);
+                            //check.camera.setTarget(terrain);
+                            
+                            console.log(document.getElementById("wireframe"));
+                            
+                            document.getElementById("wireframe").addEventListener("click",function(){
+                                if(terrainMaterial.wireframe){
+                                    terrainMaterial.wireframe = false;
+                                }else{
+                                    terrainMaterial.wireframe = true;
+                                }
+                            });
+                        }
+                    }
+                    
+                    this.createMapData();
+                    var self = this;
+                    
+                    this.engine.runRenderLoop(function(){
+                        self.scene.render();
+                    });
+                }
+                var scene_1 = new scene();
+                var im = document.getElementById("image-holder");
+                var image = new Image();
+                image.src = scene_1.mapUrl;
+                im.appendChild(image);
+                window.addEventListener("keydown",function(el){
+                    
+                });
+            }
+        </script> 
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <input type="button" value="wireframe" id="wireframe"/>
+        <div>
+            <div id="image-holder">
+                <div id="point"></div>
+            </div>
+        </div>
+    </body>
+</html>

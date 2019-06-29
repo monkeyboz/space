@@ -1,7 +1,10 @@
+console.log("testing1");
 var space = function(position,stars){
 	this.position = position;
 	this.galaxies = [];
 	this.size = [0,0,0,0];
+	
+	var total_objects = 0;
 	
 	//Galaxy
 	//-----------------------------

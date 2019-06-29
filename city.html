@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <script src="https://cdn.babylonjs.com/babylon.js" type="text/javascript"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js" type="text/javascript"></script>
+        <script>
+            window.onload = function(){
+                var canvas = document.getElementById("canvas");
+                canvas.width = 1000;
+                canvas.height = 1000;
+                
+                var distance = 1000;
+                
+                var engine = new BABYLON.Engine(canvas,true,{preserveDrawingBuffer: true,stencil: true});
+                var scene = new BABYLON.Scene(engine);
+                var camera = new BABYLON.FlyCamera("camera",new BABYLON.Vector3(500,500,1000),scene);
+                camera.attachControl(canvas,true);
+                camera.gravity = true;
+                
+                scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
+                scene.fogStart = 500;
+                scene.fogEnd = 10000;
+                scene.fogColor = new BABYLON.Color3(1,1,1,0);
+                
+                var light = new BABYLON.DirectionalLight("light",new BABYLON.Vector3(0,-8000,-8000),scene);
+                //light.diffuse = new BABYLON.Color3(1, 1, 1);
+	            //light.specular = new BABYLON.Color3(1, 1, 1);
+                
+                //var shadowGenerator = new BABYLON.ShadowGenerator(1024,light);
+                
+                function createBuilding(){
+                    
+                }
+                
+                function createCity(){
+                    var origin = [0,0,30,50];
+                    
+                    var max_obj_dim = [60,100];
+                    var x = y = 0;
+                    var width = depth = 0;
+                    var totals = [0,0];
+                    
+                    var row = [];
+                    var column = 0;
+                    var material = new BABYLON.StandardMaterial("test",scene);
+                    material.diffuseColor = BABYLON.Color3.White();
+                    var magnitude = 50;
+                    var total_buildings = 1000;
+                    for(var i = 0; i < total_buildings; ++i){
+                        /*if(x < total_buildings/2){
+                            magnitude+=5;
+                        }else{
+                            magnitude-=5;
+                        }*/
+                        width = Math.abs(Math.random()*magnitude+magnitude);
+                        depth = Math.abs(Math.random()*magnitude+magnitude);
+                        
+                        if(x > distance){
+                            x = 0;
+                            column = 0;
+                        }
+                        
+                        y = (typeof row[column] != 'undefined')?row[column]+2:0;
+                        var height = (Math.abs(Math.random()*5) == 0)?Math.random()*magnitude+magnitude:Math.random()*magnitude+magnitude;
+                        var p = new BABYLON.MeshBuilder.CreateBox("box"+i, {width:width,height:height,depth:depth},scene);
+                        p.position = new BABYLON.Vector3(x,height/2,y);
+                        p.material = material;
+                        
+                        console.log(depth);
+                        
+                        //p.receiveShadows = true;
+                        //shadowGenerator.getShadowMap().renderList.push(p);
+                        
+                        row[column] = depth+y;
+                        ++column;
+                        x += width+2;
+                    }
+                }
+                
+                createCity();
+                engine.runRenderLoop(function(){
+                    if(scene){
+                        scene.render();
+                    }
+                })
+            }
+        </script>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+    </body>
+</html>

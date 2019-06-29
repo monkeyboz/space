@@ -1,0 +1,222 @@
+<html>
+    <head>
+        <script>
+            window.onload = function(){
+                var canvas = document.getElementById("canvas");
+                canvas.width = 1000;
+                canvas.height = 1000;
+                var ctx = canvas.getContext("2d");
+                var stats = {
+                    population: 10,
+                    food: 10,
+                    intelligence: 3,
+                    positions: {100:500},
+                    hunters:{
+                        0:{position: this.positions},
+                        1:{position: this.positions},
+                        2:{position: this.positions},
+                        3:{position: this.positions},
+                        4:{position: this.positions},
+                        5:{position: this.positions},
+                        6:{position: this.positions},
+                        7:{position: this.positions},
+                        8:{position: this.positions},
+                        9:{position: this.positions},
+                        10:{position: this.positions}
+                    },
+                    paths: []
+                }
+                var resources = {
+                    5:{
+                        3:100,
+                        4:120,
+                        5:110
+                    },
+                    6:{
+                        3:100,
+                        4:120,
+                        5:110
+                    },
+                    17:{
+                        3:100,
+                        4:120,
+                        5:110
+                    },
+                    18:{
+                        3:100,
+                        4:120,
+                        5:110
+                    },
+                    20:{
+                        13:100,
+                        14:120,
+                        15:110
+                    },
+                    32:{
+                        13:100,
+                        14:120,
+                        15:110
+                    },
+                    33:{
+                        13:100,
+                        14:120,
+                        15:110
+                    },
+                    34:{
+                        13:100,
+                        14:120,
+                        15:110
+                    },
+                    35:{
+                        13:100,
+                        14:120,
+                        15:110
+                    }
+                    
+                }
+                var objects = {
+                    0: stats
+                };
+                
+                function sendHunter(hunter,rx,ry){
+                    for(var i in hunter.position){
+                        var found = [false,false];
+                        var m = [0,false];
+                        var n = [0,false];
+                        
+                        if(hunter.action != "gathering"){
+                            m = checkPosition(i,rx);
+                            n = checkPosition(hunter.position[i],ry);
+                            
+                            if(m[1] && n[1]){
+                                hunter.position[m[0]]=n[0];
+                                hunter.action = "gathering";
+                                
+                                hunter.storage = 0;
+                            }else{
+                                delete hunter.position[i];
+                                hunter.position[m[0]] = n[0];
+                            }
+                        }else{
+                            if(resources[rx][ry] > -1){
+                                resources[rx][ry] -=10;
+                                hunter.storage+=10;
+                            }else{
+                                delete resources[rx][ry];
+                                hunter.action = "returning";
+                            }
+                        }
+                    }
+                }
+                
+                function checkPosition(start,end){
+                    var m = [0,false];
+                    if(end < start){
+                        m[0] = parseInt(start)-1;
+                    }else if(end > start){
+                        m[0] = parseInt(start)+1;
+                    }else{
+                        m[1] = true;
+                        m[0] = start;
+                    }
+                    return m;
+                }
+                
+                function returnHunter(hunter,rx,ry){
+                    for(a in hunter.position){
+                        var m = checkPosition(parseInt(a),parseInt(rx));
+                        var n = checkPosition(hunter.position[a],ry);
+                        if(m[1] && n[1]){
+                            hunter.action = "home";
+                        }else{
+                            delete hunter.position[a];
+                            hunter.action = "returning";
+                            hunter.position[m[0]] = n[0];
+                        }
+                    }
+                }
+                
+                function calculateChanges(){
+                    
+                    for(a in objects){
+                        var positions = objects[a].positions
+                        if(objects[a].food%100 > 80){
+                            var keys = Object.keys(objects[a].positions);
+                            objects[a].positions[keys(keys.length-1)].push(objects[a].positions[keys(keys.length-1)][0]++);
+                            break;
+                        }
+                    }
+                    document.getElementById("food").innerHTML = objects[a].food;
+                }
+                
+                setInterval(function(){
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    for(var i = 0; i < canvas.height/10; ++i){
+                        for(var j = 0; j < canvas.width/10; ++j){
+                            ctx.beginPath();
+                            if(typeof resources[i] != 'undefined' && typeof resources[i][j] != 'undefined'){
+                                ctx.fillStyle = 'rgba(0,255,0,'+parseFloat(resources[i][j]/100)+')';
+                            }else{
+                                ctx.fillStyle = "black";
+                            }
+                            var player = false;
+                            for(a in objects){
+                                if(typeof objects[a].positions[i] != 'undefined' && objects[a].positions[i] == j){
+                                    player = true;
+                                    break;
+                                }
+                            }
+                            if(player == true){
+                                ctx.fillStyle = "red";
+                            }
+                            ctx.fillRect(i*10+i,j*10+j,10,10);
+                            ctx.closePath();
+                        }
+                    }
+                    
+                    for(var a in objects){
+                        for(var m in objects[a].hunters){
+                            if(objects[a].hunters[m].storage < 10){
+                                var info = [-399,-399];
+                                for(h in resources){
+                                    info[0] = parseInt(h);
+                                    for(b in resources[h]){
+                                        info[1] = parseInt(b);
+                                    }
+                                    if(info[1] != -399 && info[0] != -399){
+                                        break;
+                                    }
+                                }
+                                sendHunter(objects[a].hunters[m],info[0],info[1]);
+                            }else{
+                                var l = [100000,100000];
+                                for(v in objects[a].positions){
+                                    if(l > v){
+                                        l = v;
+                                    }
+                                }
+                                returnHunter(objects[a].hunters[m],l,objects[a].positions[l]);
+                            }
+                            if(objects[a].hunters[m].action == "home"){
+                                objects[a].food += (typeof objects[a].hunters[m].storage != 'undefined')?parseInt(objects[a].hunters[m].storage):0;
+                                objects[a].hunters[m].storage = 0;
+                                delete objects[a].hunters[m].action;
+                            }
+                            ctx.fillStyle = "grey";
+                            ctx.beginPath();
+                            for(var i in objects[a].hunters[m].position){
+                                ctx.fillRect(parseInt(i)*10+parseInt(i),objects[a].hunters[m].position[i]*10+objects[a].hunters[m].position[i],10,10);
+                            }
+                            ctx.closePath();
+                        }
+                    }
+                    calculateChanges();
+                },1);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="food"></div>
+        <canvas id="canvas"></canvas>
+    </body>
+</html>

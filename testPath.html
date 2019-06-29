@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <title>Testing paths</title>
+        <script>
+            window.onload = function(){
+                var d = document.getElementById("path-test");
+                d.width = 500;
+                d.height = 500;
+                var c = d.getContext("2d");
+                
+                var resources = {
+                    5:[10,11,12],
+                    6:[10,11,12]
+                }
+                var obstacles = {
+                    5:[8,9],
+                    6:[8,9],
+                    9:[5,6,7,8]
+                }
+                
+                function checkObstacles(x,y){
+                    if(typeof obstacles[x] != "undefined"){
+                        for(a in obstacles[x]){
+                            if(obstacles[x][a] == y){
+                                return true;
+                            }
+                        }
+                        return false;
+                    }else{
+                        return false;
+                    }
+                }
+                
+                function findroute(start,end,maxMoves,currMoves){
+                    var route = [];
+                    if(currMoves == maxMoves){
+                        return route;
+                    }
+                    if(start[0] == end[0] && start[1] == end[1]){
+                        return route[start[0],start[1]];
+                    }
+                    if(start[0]+1 < 20 && !checkObstacles(start[0]+1,start[1])){
+                        start[0]++;
+                    }else if(start[0]+1 > -1 && !checkObstacles(start[0]-1,start[1])){
+                        start[0]--;
+                    }
+                    if(start[1]+1 < 20 && !checkObstacles(start[0],start[1]+1)){
+                        start[1]++;
+                    } else if(start[0]-1 > -1 && !checkObstacles(start[0],start[1]-1)){
+                        start[1]--;
+                    }
+                    
+                    route.push([start[0],start[1]]);
+                    route.concat(findroute(start,end,maxMoves,++currMoves));
+                    
+                    if(route[route.length-1][0] == end[0]){
+                        return route;
+                    }else{
+                        return route;
+                    }
+                }
+                
+                setInterval(function(){
+                    c.clearRect(0,0,500,500);
+                    for(var i = 0; i < 22; ++i){
+                        for(var j = 0; j < 22; ++j){
+                            if(i == selected[0] && j == selected[1]){
+                                c.fillStyle = "orange"
+                            }else{
+                                c.fillStyle = "black";
+                            }
+                            if(typeof resources[i] != 'undefined'){
+                                for(a in resources[i]){
+                                    if(resources[i][a] == j){
+                                        if(c.fillStyle == '#ffa500'){
+                                            c.fillStyle = "purple";
+                                        }else{
+                                            c.fillStyle = 'green';
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            if(typeof obstacles[i] != 'undefined'){
+                                for(a in obstacles[i]){
+                                    if(obstacles[i][a] == j){
+                                        c.fillStyle = "white";
+                                    }
+                                }
+                            }
+                            c.beginPath();
+                            c.rect((i*20)+i,(j*20)+j,20,20);
+                            c.fill();
+                            c.closePath();
+                        }
+                    }
+                    console.log(findroute([selected[0],selected[1]],[5,resources[5][0]],100,0));
+                },1000);
+                
+                var selected = [];
+                d.addEventListener("click",function(el){
+                    selected = [Math.floor(el.offsetX/21),Math.floor(el.offsetY/21)];
+                });
+            }
+        </script>
+    </head>
+<body>
+    <canvas id="path-test"></canvas>
+</body>
+</html>

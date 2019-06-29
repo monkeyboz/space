@@ -1,0 +1,237 @@
+<html>
+    <head>
+        <script src="https://cdn.babylonjs.com/babylon.js" type="text/javascript"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js" type="text/javascript"></script>
+        <script>
+            window.onload = function(){
+                var canvas = document.getElementById('canvas');
+                var body = document.getElementsByTagName('body')[0];
+                canvas.width = body.offsetWidth;
+                canvas.height = body.offsetHeight;
+                var ctx = canvas.getContext('2d');
+                var image = new Image();
+                
+                var mouse = [0,0];
+                var cursorSize = 100;
+                
+                var imageUrl = document.getElementById('image');
+                var distanceInput = document.getElementById('distance');
+                var image1 = new Image();
+                
+                var threedengine = function(canvas,ctx){
+                    this.webgl = document.getElementById('threed');
+                    this.webgl.width = body.offsetWidth;
+                    this.webgl.height = body.offsetHeight;
+                    this.engine = new BABYLON.Engine(this.webgl,true);
+                    this.scene = new BABYLON.Scene(this.engine);
+                    this.light = new BABYLON.HemisphericLight("light",new BABYLON.Vector3(0,300,0),this.scene);
+                    this.camera = new BABYLON.ArcRotateCamera("camera",0, 0, 3000, new BABYLON.Vector3(0, 0, 0),this.scene);
+                    //this.camera = new BABYLON.FreeCamera("camera",new BABYLON.Vector3(0,1000,0),this.scene);
+                    
+                    this.canvas = canvas;
+                    this.ctx = ctx;
+                    
+                    this.camera.attachControl(this.canvas);
+                    
+                    this.createImage = function(x,y){
+                        x = (x != null)?x:0;
+                        y = (y != null)?y:0;
+                        return this.ctx.getImageData(0,0,this.canvas.width,this.canvas.width);
+                    }
+                    
+                    this.curve = 0;
+                    this.distance = this.camera.position.y/1000;
+                    this.updatePath = function(index){
+                        for(var i = 0; i < this.pathArray[index].length; i++){
+                            //path[i].x = index;
+                            this.curve = Math.sin((Math.PI)/(this.ih.height/i)) * 100;
+                            var height = ((this.ih.data[((index * 4) * this.canvas.width) + (i*4)]) + this.curve)/this.distance;
+                            this.pathArray[index][i].y = height;
+                            //path[i].z = i;
+                            /*ct3.fillStyle = "rgba("+this.ih.data[pixel[i]]+",0,0,1)";
+                            ct3.rect(i,index,1,1);
+                            ct3.fill();*/
+                        }
+                    }
+                    
+                    this.textr = new BABYLON.Texture(this.canvas.toDataURL());
+                    this.textr.invertY = true;
+                    
+                    this.updatePathArray = function(){
+                        //this.distance = 1000/this.camera.position.y;
+                        for(var i = 0; i < this.pathArray.length;++i){
+                            this.updatePath(i);
+                        }
+                    }
+                    
+                    this.update = function(ctx){
+                        this.ctx = ctx;
+                        this.canvas = ctx.canvas;
+                        this.ih = this.createImage();
+                        this.textr = new BABYLON.Texture(this.canvas.toDataURL());
+                        this.material.diffuseTexture = this.textr;
+                        this.material.specularTexture = new BABYLON.Texture("images/planets/black.jpg");
+                        this.textr.vScale = -1;
+                        this.textr.uScale = 1;
+                        this.textr.coordinatesMode = BABYLON.Texture.PLANAR_MODE;
+                        this.updatePathArray();
+                        this.ribbon.dispose();
+                        this.camera.setTarget(new BABYLON.Vector3(this.canvas.width,0,this.canvas.height));
+                        this.ribbon = BABYLON.MeshBuilder.CreateRibbon("ribbon",{pathArray:this.pathArray},this.scene);
+                        this.ribbon.material = this.material;
+                    }
+                    
+                    this.pathArray = [];
+                    this.ih = this.createImage();
+                    this.imageArray = [];
+                    this.ribbon;
+                    this.material = new BABYLON.StandardMaterial("material",this.scene);
+                    
+                    //this.material.diffuseTexture = this.textr;
+                    this.setupRibbon = function(){
+                        for(var i = 0; i < this.ih.height; ++i){
+                            var path = [];
+                            var imagePix = [];
+                            for(var j = 0; j < this.ih.width; ++j){
+                                x = i+(i*1);
+                                z = j+(j*1);
+                                y = Math.sin((Math.PI)/(this.ih.height/i)) * 300;
+                                path.push(new BABYLON.Vector3(x,y,z));
+                            }
+                            this.pathArray.push(path);
+                        }
+                        this.ribbon = new BABYLON.MeshBuilder.CreateRibbon("ribbon",{pathArray:this.pathArray},this.scene);
+                        this.ribbon.material = this.material;
+                        //this.camera.setTarget(this.ribbon);
+                    }
+                    
+                    var sphere = new BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:1,segments:36,position:new BABYLON.Vector3(0,-30,0)},this.scene);
+                    //this.camera.setTarget(sphere);
+                    this.setupRibbon();
+                    
+                    var self = this;
+                    
+                    this.scene.registerBeforeRender(function(){
+                        self.updatePathArray();
+                    })
+                    
+                    this.engine.runRenderLoop(function(){
+                        if(self.scene){
+                            self.scene.render();
+                        }
+                    });
+                }
+                
+                var canvas1 = document.createElement('canvas');
+                canvas1.width = cursorSize+((cursorSize/2)*4)+((cursorSize/4)*4);
+                canvas1.height = canvas1.width;
+                var ct1 = canvas1.getContext('2d');
+                
+                function createImage(ctx,x1,y1,width1,height1,x2,y2,width2,height2){
+                    ctx.drawImage(image1,x1,y1,width1,height1,x2,y2,width2,height2);
+                }
+                
+                function augment(ctx,originx,originy,originwidth,originheight,x,y,width,height){
+                    //center
+                    createImage(ctx,originx,originy,originwidth,originheight,x,y,width,height);
+                    //right
+                    createImage(ctx,originx-(originwidth/2)*2,originy,originwidth,originheight,x-width/2,y,width/2,height);
+                    createImage(ctx,originx-(originwidth/2)*2-(originwidth/4)*4,originy,originwidth,originheight,x-width/2-width/4,y,width/4,height);
+                    //left
+                    createImage(ctx,originx+(originwidth/2)*2,originy,originwidth,originheight,x+width,y,width/2,height);
+                    createImage(ctx,originx+(originwidth/2)*2+(originwidth/4)*4,originy,originwidth,originheight,x+width+width/2,y,width/4,height);
+                    //top
+                    createImage(ctx,originx,originy-(originheight/2)*2,originwidth,originheight,x,y-height/2,width,height/2);
+                    createImage(ctx,originx,originy-(originheight/2)*2-(originheight/4)*4,originwidth,originheight,x,y-height/2-height/4,width,height/4);
+                    //bottom
+                    createImage(ctx,originx,originy+(originheight/2)*2,originwidth,originheight,x,y+height,width,height/2);
+                    createImage(ctx,originx,originy+(originheight/2)*2+(originheight/4)*4,originwidth,originheight,x,y+height/2+height,width,height/4);
+                    return ctx;
+                }
+                
+                getImage("images/planets/earth.jpg");
+                imageUrl.onchange = function(el){
+                    getImage(el.target.value);
+                }
+                distanceInput.onchange = function(el){
+                    m.distance = el.target.value;
+                }
+                document.getElementById('cursorSize').onchange = function(el){
+                    cursorSize = el.target.value;
+                }
+                
+                ct1 = augment(ct1,100,100,cursorSize,cursorSize,canvas1.width/4,canvas1.height/4,canvas1.width,canvas1.height);
+                var m = new threedengine(canvas1,ct1);
+                var cursorPosition = [0,0];
+                var interval = null;
+                
+                canvas.onclick = function(el){
+                    mouse[0] = el.offsetX;
+                    mouse[1] = el.offsetY;
+                }
+                
+                function getImage(imageURL){
+                    image.src = imageURL;
+                    image.onload = function(){
+                        var cm = document.createElement('canvas');
+                        cm.width = canvas.width;
+                        cm.height = canvas.height;
+                        var ct = cm.getContext('2d');
+                        ct.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+                        image1.src = cm.toDataURL();
+                        clearInterval(interval);
+                        image1.onload = function(){
+                            interval = setInterval(function(){
+                                ctx.clearRect(0,0,canvas.width,canvas.height);
+                                ctx.drawImage(image1,0,0,image1.width,image1.height,0,0,canvas.width,canvas.height);
+                                ctx.closePath();
+                                
+                                for(var i = 0; i < canvas.height/cursorSize; ++i){
+                                    for(var j = 0; j < canvas.width/cursorSize; ++j){
+                                        ctx.fillStyle = 'rgba(255,255,255,.3)';
+                                        ctx.beginPath();
+                                        
+                                        if(Math.floor(mouse[1]/cursorSize) == i && Math.floor(mouse[0]/cursorSize) == j){
+                                            ctx.fillStyle = 'rgba(255,255,255,.8)';
+                                            ctx.fillText(i+" "+j,10,10);
+                                            if(cursorPosition[0] != (j)*cursorSize || cursorPosition[1] != (i)*cursorSize){
+                                                cursorPosition[0] = (j)*cursorSize;
+                                                cursorPosition[1] = (i)*cursorSize;
+                                                ct1.clearRect(0,0,ct1.canvas.width,ct1.canvas.height);
+                                                augment(ct1,cursorPosition[0],cursorPosition[1],cursorSize,cursorSize,ct1.canvas.width/4,ct1.canvas.width/4,ct1.canvas.width/2,ct1.canvas.height/2);
+                                                m.update(ct1);
+                                            }
+                                        }
+                                        ctx.rect(j*cursorSize,i*cursorSize,cursorSize,cursorSize);
+                                        ctx.fill();
+                                        ctx.closePath();
+                                    }
+                                }
+                            },1);
+                        }
+                    }
+                }
+            }
+            
+            
+        </script>
+        <style>
+            body{
+                margin:0px;
+            }
+            input{
+                padding: 5px;
+                margin: 1px;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <input id='image' type='text' name='' value='images/planets/earth.jpg'/>
+            <input id="cursorSize" type='text' name='' value='100'/>
+            <input id="distance" type='text' name='' value='100'/>
+        </div>
+        <canvas id="canvas"></canvas>
+        <canvas id="threed"></canvas>
+    </body>
+</html>

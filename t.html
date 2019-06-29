@@ -1,0 +1,478 @@
+<html>
+    <head>
+        <script src="https://cdn.babylonjs.com/babylon.js" type="text/javascript"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js" type="text/javascript"></script>
+        <script>
+            window.onload = function(){
+                var space = function(canwidth,canheight,holder){
+                    var time = 0;
+                    var timeChange = (360)*((time/24));
+                    var degree = 180;
+                    
+                    var x = 0;
+                    var y = 0;
+                    var z = 10;
+                    
+                    var currentPosition = [0,0,0];
+                    
+                    var sun = {
+                        name: "sun",
+                        size: 110,
+                        distance: 0
+                    };
+                    var planets = {
+                        mercury: {
+                            size: 1,
+                            distance: 62,
+                            phase: 6,
+                            rotations: 175.96,
+                            mass: 0.330,
+                            texture: "images/planets/mercury.jpg",
+                            bumpmap: "images/planets/mercurybump.jpg",
+                            heightmap: "images/planets/mercuryheight.png",
+                            curphase: 0
+                        },
+                        venus: {
+                            size: 1.9,
+                            distance: 108,
+                            phase: 95,
+                            rotations: 243,
+                            mass: 4.87,
+                            atmosphere: 91,
+                            texture: "images/planets/venus.jpg",
+                            bumpmap: "images/planets/venusbump.jpg",
+                            curphase: 0
+                        },
+                        earth: {
+                            size: 2,
+                            distance: 152,
+                            phase: 100,
+                            rotations: 365.2564,
+                            mass: 5.97,
+                            atmosphere: 1,
+                            texture: "images/planets/earth.jpg",
+                            bumpmap: "images/planets/earthbump.jpg",
+                            specularmap: "images/planets/earthspec.jpg",
+                            atmospheretexture: "images/planets/earthclouds.jpg",
+                            curphase: 0
+                        },
+                        mars: {
+                            size: 1.5,
+                            distance: 254,
+                            phase: 106,
+                            rotations: 685,
+                            mass: 0.642,
+                            atmosphere: 0.01,
+                            texture: "images/planets/mars.jpg",
+                            bumpmap: "images/planets/marsbump.jpg",
+                            curphase: 0
+                        },
+                        jupiter: {
+                            size: 12.2,
+                            distance: 792,
+                            phase: 147,
+                            rotations: 4332.59,
+                            mass: 1898,
+                            texture: "images/planets/jupiter.jpg",
+                            curphase: 0
+                        },
+                        saturn: {
+                            size: 10.4,
+                            distance: 1504,
+                            phase: 155,
+                            rotations: 24491.07,
+                            mass: 568,
+                            texture: "images/planets/saturn.jpg",
+                            curphase: 0
+                        },
+                        uranus: {
+                            size: 5,
+                            distance: 2968,
+                            phase: 185,
+                            rotations: 42718,
+                            mass: 86.8,
+                            texture: "images/planets/uranus.jpg",
+                            curphase: 0
+                        },
+                        neptune: {
+                            size: 4.9,
+                            distance: 4478,
+                            phase: 172,
+                            rotations: 89666,
+                            mass: 102,
+                            texture: "images/planets/neptune.jpg",
+                            curphase: 0
+                        }
+                        };
+                        
+                    
+                    function changeTime(time){
+                        timeChange = (360)*((time/24))/4;
+                        x = Math.cos(timeChange)*10;
+                        z = (Math.sin(timeChange)*10);
+                        return {x:x,z:z};
+                    }
+                    
+                    function changeRotations(time,rotations){
+                        return (((360)*((time/24))/4))*rotations;
+                    }
+                    
+                    function createHeightmap(){
+                        var heightmap = planets[selected.name].heightmap;
+                    }
+                    
+                    var canvas = document.createElement('canvas');
+                    var engine = new BABYLON.Engine(canvas,true,{preserveDrawingBuffer: true,stencil: true});
+                    var scene = new BABYLON.Scene(engine);
+                    var camera = new BABYLON.ArcRotateCamera("camera",new BABYLON.Vector3(0,0,0),scene);
+                    var light = new BABYLON.PointLight("light",new BABYLON.Vector3(0,0,0),scene);
+                    
+                    var shadowGen = new BABYLON.ShadowGenerator(1056,light);
+                    
+                    var white = new BABYLON.Color3(1,1,1);
+                    scene.clearColor = BABYLON.Color3.Black();
+                    
+                    var highlight = new BABYLON.GlowLayer("h1",scene);
+                    highlight.outerGlow = true;
+                    highlight.intensity = 10;
+                    highlight.blurKernelSize = 30;
+                    
+                    canvas.width = canwidth;
+                    canvas.height = canheight;
+                    camera.maxZ = 300000;
+                    holder.appendChild(canvas);
+                    
+                    var sun = new BABYLON.MeshBuilder.CreateSphere("sun",{diameter:sun.size,segments:36},scene);
+                    sun.position = new BABYLON.Vector3(0,0,0);
+                    var sunMaterial = new BABYLON.StandardMaterial("material");
+                    sunMaterial.emissiveColor = white;
+                    sunMaterial.ambientColor = white;
+                    sun.material = sunMaterial;
+                    
+                    /*scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
+                    scene.fogStart = 100;
+                    scene.fogEnd = 1000;*/
+                    
+                    sun.receiveShadows = false;
+                    shadowGen.removeShadowCaster(sun,true);
+                    light.excludedMeshes.push(sun);
+                    
+                    /*var milkyway = new BABYLON.MeshBuilder.CreatePlane("milkyway",{width: 2000, height: 1000},scene);
+                    var white = new BABYLON.Color3.White();
+                    var milkywayMaterial = new BABYLON.StandardMaterial("milkyway",scene);
+                    var milkywayTexture = new BABYLON.Texture("images/milkyway.jpg",scene);
+                    milkyway.backFaceCulling = false;
+                    milkyway.disableLighting = true;
+                    milkywayMaterial.emissiveTexture = milkywayTexture;
+                    milkyway.position = new BABYLON.Vector3(0,0,1000);
+                    milkyway.material = milkywayMaterial;
+                    milkyway.position = new BABYLON.Vector3(0,0,0);*/
+                    
+                    var planetMeshes = [];
+                    var text = [];
+                    
+                    var textMaterial = new BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("screen");
+                    
+                    for(var a in planets){
+                        var planet = new BABYLON.MeshBuilder.CreateSphere(a,{diameter:planets[a].size*2,segments:36},scene);
+                        var position = new BABYLON.Vector3(x+planets[a].distance,y,z);
+                        planet.position = position;
+                        planet.receiveShadows = true;
+                        //shadowGen.addShadowCaster(planet);
+                        //shadowGen.getShadowMap().renderList.push(planet);
+                        light.includedOnlyMeshes.push(planet);
+                        planets[a].visible = true;
+                        var material = new BABYLON.StandardMaterial(planets[a].texture);
+                        material.diffuseTexture = new BABYLON.Texture(planets[a].texture);
+                        if(planets[a].bumpmap != null){
+                            material.bumpTexture = new BABYLON.Texture(planets[a].bumpmap);
+                            material.useParallax = true;
+                            material.useParallaxOcclusion = true;
+                            material.parallaxScaleBias = 0.05;
+                            material.invertNormalMapX = true;
+                            material.invertNormalMapY = true;
+                        }
+                        if(planets[a].specularmap != null){
+                            material.specularTexture = new BABYLON.Texture(planets[a].specularmap);
+                        }else{
+                            material.specularTexture = new BABYLON.Texture("images/planets/black.jpg");
+                        }
+                        
+                        if(planets[a].atmosphere != null){
+                            //var atmosphere = new BABYLON.MeshBuilder.CreateSphere(a+"_atmosphere",{diameter: (planets[a].size*2)+3,segments:10},scene);
+                            //atmosphere.position = position;
+                            //var clouds = new BABYLON.StandardMaterial("clouds");
+                            if(planets[a].atmospheretexture != null){
+                                //var m = new BABYLON.Texture(planets[a].atmospheretexture);
+                                //clouds.diffuseTexture = m;
+                                //clouds.diffuseTexture.hasAlpha = true;
+                                //clouds.alpha = 0.5;
+                            }
+                            //atmosphere.material = clouds;
+                            //clouds.receiveShadows = false;
+                            
+                            //planet = BABYLON.Mesh.MergeMeshes([planet,atmosphere],false);
+                            //planet.name = a;
+                            /**/
+                        }
+                        material.specularColor = new BABYLON.Color3(3,1,1,0.000001);
+                        material.specularPower = 100;
+                        material.ambientColor = new BABYLON.Color4(1,1,1,.2);
+                        planet.material = material;
+                        
+                        planetMeshes[a] = planet;
+                        
+                        var text =  new BABYLON.GUI.TextBlock();
+                        text.color = "white";
+                        text.alpha = 0.8;
+                        text.fontSize = 12;
+                        text.linkOffsetY = planets[a].size-10;
+                        text.text = a;
+                        textMaterial.addControl(text);
+                        text.linkWithMesh(planet);
+                    }
+                    
+                    shadowGen.usePoissonSampling = true;
+                    shadowGen.bias = 0.1136;
+                    
+                    var bias_input = document.getElementById("bias");
+                    bias_input.value = shadowGen.bias;
+                    var speed = 360;
+                    var speed_input = document.getElementById("speed");
+                    speed_input.value = speed;
+                    
+                    var distance = 100;
+                    var distance_input = document.getElementById("distance");
+                    distance_input.value = distance;
+                    
+                    var focal_info = document.getElementById("focal_info");
+                    var focal = document.getElementById('elements').getElementsByTagName('div');
+                    var selected = null;
+                    
+                    
+                    for(var i = 0; i < focal.length; ++i){
+                        focal[i].onclick = function(el){
+                            selected = planetMeshes[el.currentTarget.innerHTML.toLowerCase()];
+                            camera.radius = planets[selected.name].size;
+                            camera.position = new BABYLON.Vector3(planetMeshes[selected.name].position.x,planetMeshes[selected.name].position.y,planetMeshes[selected.name].position.z);
+                        }
+                    }
+                    
+                    var material = new BABYLON.StandardMaterial("material",scene);
+                    material.diffuseColor = BABYLON.Color3.Red();
+                    material.emissiveColor = BABYLON.Color3.White();
+                    material.specularColor = BABYLON.Color3.Red();
+                    
+                    camera.attachControl(canvas);
+                    
+                    var months = [
+                            "december",
+                            "november",
+                            "october",
+                            "september",
+                            "august",
+                            "july",
+                            "june",
+                            "may",
+                            "april",
+                            "march",
+                            "february",
+                            "january"
+                        ];
+                    
+                    function imageProcessor(image){
+                        var canvas = document.createElement('canvas');
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        var ctx = canvas.getContext("2d");
+                        ctx.drawImage(image,0,0);
+                        return ctx.getImageData(0,0,image.width,image.height);
+                    }
+                        
+                    function planetDetailed(planet){
+                        if(planets[planet].heightmap != null){
+                            var image = new Image();
+                            image.src = planets[planet].heightmap;
+                            image.onload = function(img){
+                                var image = imageProcessor(this).data;
+                                var pathArray = [];
+                                for(var i = 0; i < 10; i+4){
+                                    var b = new BABYLON.Vector3(0,image[i],0);
+                                    pathArray.push(b);
+                                }
+                                var heightmap = new BABYLON.MeshBuilder.CreateRibbon("ribbon",{pathArray:pathArray},scene);
+                                heightmap.position = planetMesh[planet].position;
+                                camera.setTarget(heightmap);
+                            }
+                            return true;
+                        }else{
+                            return false;
+                        }
+                    }
+                    setInterval(function(){
+                        time+=parseFloat(speed)/(60*60*60*24*360);
+                        camera.radius = distance;
+                        
+                        var date = document.getElementById("date");
+                        date.innerHTML = "";
+                        var years = 561-(time/167);
+                        var term = "BC";
+                        if(years < 0){
+                            years = Math.abs(years);
+                            term = "AD";
+                        }
+                        
+                        date.innerHTML = months[Math.floor((12*(years-Math.floor(years))))]+" <br/>";
+                        date.innerHTML += Math.floor(years) + " "+term;
+                        var change = years-Math.floor(years);
+                        
+                        var orbits = 0;
+                        
+                        for(var a in planets){
+                            var v = changeTime(time/planets[a].phase);
+                            var x = (v.x*planets[a].distance);
+                            var z = (v.z*planets[a].distance);
+                            planetMeshes[a].position.x = x;
+                            planetMeshes[a].position.z = z;
+                            if(planets[a].size-distance <= planets[a].size+3){
+                                if(distance <= planets[a].size * 3){
+                                    if(planets[a].visible == true){
+                                        planetMeshes[a].visibility = 0;
+                                        //planetDetailed(a);
+                                        planets[a].visible = false;
+                                    }
+                                }else{
+                                    planets[a].visible = true;
+                                    planetMeshes[a].visibility = 1;
+                                    axis = new BABYLON.Vector3(0,0,0);
+                                    var rotate = (planets[a].rotations*speed)/10000000000;
+                                    planetMeshes[a].rotation.y += rotate;
+                                }
+                            }
+                        }
+                        
+                        if(selected != null){
+                            if(distance <= planets[selected.name].size*2){
+                                console.log("oops");
+                            }
+                            camera.setTarget(selected.position);
+                            focal_info.innerHTML = selected.name+"<br/>";
+                            focal_info.innerHTML += planets[selected.name].distance+"<br/>";
+                            focal_info.innerHTML += planets[selected.name].mass+"<br/>";
+                            selected = null;
+                        }
+                        
+                        var shadowBias = bias_input.value;
+                        shadowGen.bias = shadowBias;
+                        
+                    },1);
+                    
+                    speed_input.onchange = function(){
+                        if(parseFloat(speed_input.value) > 0){
+                            speed = parseFloat(speed_input.value);
+                        }
+                    }
+                    distance_input.onchange = function(){
+                        if(parseFloat(distance_input.value) > 0){
+                            distance = parseFloat(distance_input.value);
+                        }
+                    }
+                    
+                    window.onkeydown = function(el){
+                        switch(el.keyCode){
+                            case 38:
+                                distance += 0.01;
+                                distance_input.value = distance;
+                                break;
+                            case 40:
+                                distance -= 0.01;
+                                distance_input.value = distance;
+                                break;
+                            case 37:
+                                break;
+                            case 39:
+                                break;
+                        }
+                        
+                    }
+                    
+                    window.onclick = function(el){
+                        var pick = scene.pick(el.offsetX,el.offsetY);
+                        if(pick.pickedMesh != null && pick.pickedMesh.name != "sun" && pick.pickedMesh.name != "milkyway"){
+                            selected = pick.pickedMesh;
+                            focal_info.innerHTML = selected.name;
+                        }
+                    }
+                    
+                    engine.runRenderLoop(function(){
+                        if(scene){
+                            scene.render();
+                        }
+                    })
+                }
+                var scene = new space(window.innerWidth,window.innerHeight,document.getElementById("canvas_holder"));
+            }
+        </script>
+        <style>
+            body{
+                margin: 0px;
+            }
+            #canvas_holder{
+               float: left;
+               position: absolute;
+               z-index: 1;
+            }
+            #focal_info{
+                float: left;
+                text-transform: capitalize;
+                clear: both;
+            }
+            #elementHolder{
+                position: absolute;
+                padding: 10px;
+                left: 0px;
+                top: 0px;
+                background: rgba(255,255,255,.7);
+                z-index: 1000000;
+            }
+            #elements{
+                padding: 10px;
+                float: left;
+            }
+            #elements > div{
+                padding: 5px;
+            }
+            .clear{
+                clear: both;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <div id="canvas_holder"></div>
+            <div id="elementHolder">
+                <div style="float: left;">
+                    <div id="focal_info">No focal</div>
+                    <div id="date">561 BC</div>
+                    <div id="elements">
+                        <div>Sun</div>
+                        <div>Mercury</div>
+                        <div>Venus</div>
+                        <div>Earth</div>
+                        <div>Mars</div>
+                        <div>Jupiter</div>
+                        <div>Saturn</div>
+                        <div>Uranus</div>
+                        <div>Neptune</div>
+                    </div>
+                </div>
+                <div style="float:left">
+                    Shadow Bias<input type="number" name="bias" id="bias"/>
+                    Speed <input type="number" name="speed" id="speed"/>
+                    Distance <input type="number" name="distance" id="distance"/>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </body>
+</html>
